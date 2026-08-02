@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pool — Pokemon VGC Draft League</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0D0D0D; --ink-soft:#161616; --panel:#1C1C1C; --cream:#FAFAF7; --cream-dim:#B8B7B2;
+    --gold:#FFCB05; --line: rgba(250,250,247,0.14);
+    --display: 'Big Shoulders Display', sans-serif; --body: 'Inter', sans-serif; --mono: 'Space Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--ink);color:var(--cream);font-family:var(--body);line-height:1.5;-webkit-font-smoothing:antialiased;}
+  a{color:inherit;text-decoration:none;}
+  h1{font-family:var(--display);text-transform:uppercase;font-size:clamp(34px,5vw,52px);margin:14px 0 0;}
+  header.site-nav{position:sticky;top:0;z-index:60;background:rgba(13,13,13,0.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;max-width:1100px;margin:0 auto;}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:0.02em;text-transform:uppercase;}
+  .brand-mark{width:22px;height:22px;flex-shrink:0;}
+  .nav-links{display:flex;align-items:center;gap:20px;font-size:13px;font-weight:600;}
+  .nav-links a{color:var(--cream-dim);}
+  .nav-links a:hover{color:var(--gold);}
+  .nav-account{display:flex;align-items:center;gap:12px;}
+  .nav-account #navUserEmail{color:var(--cream-dim);font-size:12.5px;}
+  .nav-leagues-wrap{position:relative;}
+  .nav-leagues-menu{
+    display:none;position:absolute;top:calc(100% + 8px);right:0;min-width:240px;
+    background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);z-index:100;
+  }
+  .nav-leagues-menu.open{display:block;}
+  .nlm-label{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:var(--cream-dim);margin-bottom:8px;}
+  .nlm-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto;}
+  .nlm-list li a{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:8px 10px;border-radius:4px;font-size:13px;font-weight:600;color:var(--cream);
+  }
+  .nlm-list li a:hover{background:var(--ink-soft);color:var(--gold);}
+  .nlm-commish{font-family:var(--mono);font-size:9px;color:var(--gold);background:rgba(255,203,5,0.15);padding:1px 6px;border-radius:3px;text-transform:uppercase;}
+  .nlm-empty{font-size:12.5px;color:var(--cream-dim);padding:8px 10px;}
+  .nlm-divider{height:1px;background:var(--line);margin:10px 0;}
+  .nlm-action{display:block;padding:8px 10px;border-radius:4px;font-size:13px;font-weight:600;color:var(--cream-dim);}
+  .nlm-action:hover{background:var(--ink-soft);color:var(--gold);}
+  .nav-links .nav-cta{background:var(--gold);color:var(--ink);padding:8px 16px;border-radius:3px;font-weight:700;text-transform:uppercase;font-size:12px;}
+  main{max-width:700px;margin:0 auto;padding:100px 22px;text-align:center;}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);}
+  p{color:var(--cream-dim);font-size:15px;margin-top:16px;}
+</style>
+</head>
+<body>
+<header class="site-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <svg class="brand-mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="45" fill="#fff" stroke="#111" stroke-width="6"/>
+        <path d="M6,50 A44,44 0 0,1 94,50 Z" fill="#EE1515" stroke="#111" stroke-width="6"/>
+        <line x1="6" y1="50" x2="94" y2="50" stroke="#111" stroke-width="7"/>
+        <circle cx="50" cy="50" r="15" fill="#fff" stroke="#111" stroke-width="7"/>
+        <circle cx="50" cy="50" r="6" fill="#111"/>
+      </svg>
+      Pokemon VGC Draft League
+    </a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="pool.html">Pool</a>
+      <a href="format.html">Format</a>
+      <span id="navSignedOut"><a href="signin.html" class="nav-cta">Sign In</a></span>
+      <span id="navSignedIn" class="nav-account" style="display:none;">
+        <div class="nav-leagues-wrap">
+          <button id="navLeaguesBtn" class="btn btn-sm" type="button">Leagues &#9662;</button>
+          <div id="navLeaguesMenu" class="nav-leagues-menu">
+            <div class="nlm-label">My Leagues</div>
+            <ul id="navLeaguesList" class="nlm-list"></ul>
+            <div class="nlm-empty" id="navLeaguesEmpty" style="display:none;">You're not in any leagues yet.</div>
+            <div class="nlm-divider"></div>
+            <a href="signin.html" class="nlm-action">+ Create a League</a>
+            <a href="signin.html#joinPane" class="nlm-action">+ Join a League</a>
+          </div>
+        </div>
+        <span id="navUserEmail"></span>
+        <button id="navSignOutBtn" class="btn btn-sm">Sign Out</button>
+      </span>
+    </nav>
+  </div>
+</header>
+<main>
+  <span class="eyebrow">Coming Soon</span>
+  <h1>Pool</h1>
+  <p>This page is being built next for Season 2 — check back soon.</p>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyArHYUDlo49rdA889l9woNhOuUSKe72CeE",
+    authDomain: "pokemon-vr-draft-league.firebaseapp.com",
+    projectId: "pokemon-vr-draft-league",
+    storageBucket: "pokemon-vr-draft-league.firebasestorage.app",
+    messagingSenderId: "400355118785",
+    appId: "1:400355118785:web:bee98aa998c87ea5098e40"
+  };
+  const app = initializeApp(FIREBASE_CONFIG);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  const navSignedOut = document.getElementById("navSignedOut");
+  const navSignedIn = document.getElementById("navSignedIn");
+  const navUserEmail = document.getElementById("navUserEmail");
+  const navSignOutBtn = document.getElementById("navSignOutBtn");
+
+  const navLeaguesBtn = document.getElementById("navLeaguesBtn");
+  const navLeaguesMenu = document.getElementById("navLeaguesMenu");
+  const navLeaguesList = document.getElementById("navLeaguesList");
+  const navLeaguesEmpty = document.getElementById("navLeaguesEmpty");
+
+  navLeaguesBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    navLeaguesMenu.classList.toggle("open");
+  });
+  document.addEventListener("click", () => navLeaguesMenu.classList.remove("open"));
+  navLeaguesMenu.addEventListener("click", (e) => e.stopPropagation());
+
+  async function loadNavLeagues(user){
+    try{
+      const q = query(collection(db, "leagues"), where("members." + user.uid, "!=", null));
+      const snap = await getDocs(q);
+      navLeaguesList.innerHTML = "";
+      if(snap.empty){
+        navLeaguesEmpty.style.display = "block";
+        return;
+      }
+      navLeaguesEmpty.style.display = "none";
+      snap.forEach(docSnap => {
+        const league = docSnap.data();
+        const isCommish = league.commissionerUid === user.uid;
+        const li = document.createElement("li");
+        li.innerHTML = '<a href="league.html?id=' + docSnap.id + '"><span>' + escapeHtml(league.name || "Untitled League") + "</span>" + (isCommish ? '<span class="nlm-commish">Commish</span>' : "") + "</a>";
+        navLeaguesList.appendChild(li);
+      });
+    }catch(err){
+      navLeaguesEmpty.style.display = "block";
+      navLeaguesEmpty.textContent = "Could not load leagues.";
+    }
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    if(user){
+      navSignedOut.style.display = "none";
+      navSignedIn.style.display = "flex";
+      navUserEmail.textContent = user.email || "";
+      loadNavLeagues(user);
+    } else {
+      navSignedOut.style.display = "";
+      navSignedIn.style.display = "none";
+    }
+  });
+
+  navSignOutBtn.addEventListener("click", () => signOut(auth));
+</script>
+</body>
+</html>
