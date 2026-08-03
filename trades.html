@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>League — Pokemon VGC Draft League</title>
+<meta name="description" content="League dashboard — members, join code, and commissioner controls.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0D0D0D;
+    --ink-soft:#161616;
+    --panel:#1C1C1C;
+    --cream:#FAFAF7;
+    --cream-dim:#B8B7B2;
+    --gold:#FFCB05;
+    --gold-soft:#C79A00;
+    --teal:#B00000;
+    --teal-bright:#FF5A5A;
+    --scarlet:#EE1515;
+    --slate:#3A3A3A;
+    --line: rgba(250,250,247,0.14);
+
+    --display: 'Big Shoulders Display', sans-serif;
+    --body: 'Inter', sans-serif;
+    --mono: 'Space Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--cream);
+    font-family:var(--body);
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;text-decoration:none;}
+  ::selection{background:var(--gold);color:var(--ink);}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
+  h1,h2{font-family:var(--display);text-transform:uppercase;letter-spacing:0.01em;line-height:0.96;margin:0;}
+
+  header.site-nav{position:sticky;top:0;z-index:60;background:rgba(13,13,13,0.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;max-width:900px;margin:0 auto;}
+
+  .league-subnav{background:var(--ink-soft);border-bottom:1px solid var(--line);}
+  .league-subnav-inner{max-width:900px;margin:0 auto;display:flex;gap:4px;padding:0 22px;overflow-x:auto;}
+  .subnav-tab{
+    padding:14px 18px;font-family:var(--mono);font-size:12.5px;text-transform:uppercase;letter-spacing:0.06em;
+    color:var(--cream-dim);border-bottom:2px solid transparent;white-space:nowrap;flex-shrink:0;
+  }
+  .subnav-tab:hover{color:var(--cream);}
+  .subnav-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+
+  h2{font-family:var(--display);text-transform:uppercase;letter-spacing:0.01em;line-height:0.96;margin:0 0 14px;font-size:19px;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:20px;margin-bottom:20px;}
+  .field-inline label{display:block;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--cream-dim);margin-bottom:6px;}
+  select{background:var(--ink-soft);border:1px solid var(--line);color:var(--cream);padding:9px 11px;border-radius:3px;font-family:var(--body);font-size:13.5px;min-width:240px;}
+  select:focus{border-color:var(--gold);}
+  .settings-note{font-size:12.5px;color:var(--cream-dim);margin:12px 0 0;}
+  .settings-status{font-size:13px;margin-top:10px;}
+  .btn-danger{border-color:rgba(238,21,21,0.4);color:#FF8A8A;}
+  .btn-danger:hover{border-color:#EE1515;color:#FF8A8A;}
+  .btn-sm{padding:7px 14px;font-size:11px;}
+  .btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+
+  .trade-columns{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  @media (max-width:640px){.trade-columns{grid-template-columns:1fr;}}
+  .trade-col-label{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--cream-dim);margin-bottom:10px;}
+  .trade-pick-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto;}
+  .trade-pick-item{
+    display:flex;align-items:center;gap:8px;font-size:13px;padding:8px;border:1px solid var(--line);
+    border-radius:4px;cursor:pointer;background:var(--ink-soft);
+  }
+  .trade-pick-item:hover{border-color:var(--gold-soft, var(--gold));}
+  .trade-pick-item.picked{border-color:var(--gold);background:rgba(255,203,5,0.08);}
+  .trade-pick-item .mon-sprite{width:26px;height:26px;object-fit:contain;flex-shrink:0;}
+  .trade-pick-item .mon-info{flex:1;min-width:0;}
+  .trade-pick-item .mon-var{font-family:var(--mono);font-size:10.5px;color:#FF5A5A;}
+  .tier-chip{font-family:var(--mono);font-weight:700;font-size:11px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;border-radius:4px;background:rgba(255,203,5,0.15);color:var(--gold);}
+
+  .trade-card{background:var(--ink-soft);border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:12px;}
+  .trade-summary{font-size:13.5px;line-height:1.6;}
+  .trade-actions{display:flex;gap:8px;margin-top:12px;}
+  .veto-count{font-family:var(--mono);font-size:11.5px;color:var(--gold);margin-top:8px;}
+  .drop-note{color:#FF8A8A;font-size:12.5px;}
+  .accept-drop-wrap{margin-top:14px;padding-top:14px;border-top:1px solid var(--line);}
+  .accept-drop-wrap .trade-pick-list{max-height:200px;}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;font-size:18px;letter-spacing:0.02em;text-transform:uppercase;}
+  .brand-mark{width:22px;height:22px;flex-shrink:0;}
+
+  main{max-width:900px;margin:0 auto;padding:40px 22px 80px;}
+
+  .page-head{margin-bottom:28px;}
+  .page-head .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);}
+  .page-head h1{font-size:clamp(30px,5vw,46px);margin-top:8px;}
+  .commish-badge{
+    display:inline-flex;align-items:center;gap:6px;margin-top:10px;
+    font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:0.06em;
+    background:rgba(255,203,5,0.15);color:var(--gold);padding:4px 10px;border-radius:3px;
+  }
+
+  .nav-links{display:flex;align-items:center;gap:20px;font-size:13px;font-weight:600;}
+  .nav-links a{color:var(--cream-dim);}
+  .nav-links a:hover{color:var(--gold);}
+  .nav-account{display:flex;align-items:center;gap:12px;}
+  .nav-account #navUserEmail{color:var(--cream-dim);font-size:12.5px;}
+  .nav-leagues-wrap{position:relative;}
+  .nav-leagues-menu{
+    display:none;position:absolute;top:calc(100% + 8px);right:0;min-width:240px;
+    background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);z-index:100;
+  }
+  .nav-leagues-menu.open{display:block;}
+  .nlm-label{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:0.08em;color:var(--cream-dim);margin-bottom:8px;}
+  .nlm-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:220px;overflow-y:auto;}
+  .nlm-list li a{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:8px 10px;border-radius:4px;font-size:13px;font-weight:600;color:var(--cream);
+  }
+  .nlm-list li a:hover{background:var(--ink-soft);color:var(--gold);}
+  .nlm-commish{font-family:var(--mono);font-size:9px;color:var(--gold);background:rgba(255,203,5,0.15);padding:1px 6px;border-radius:3px;text-transform:uppercase;}
+  .nlm-empty{font-size:12.5px;color:var(--cream-dim);padding:8px 10px;}
+  .nlm-divider{height:1px;background:var(--line);margin:10px 0;}
+  .nlm-action{display:block;padding:8px 10px;border-radius:4px;font-size:13px;font-weight:600;color:var(--cream-dim);}
+  .nlm-action:hover{background:var(--ink-soft);color:var(--gold);}
+  .nlm-input{
+    width:100%;background:var(--ink-soft);border:1px solid var(--line);color:var(--cream);
+    padding:8px 10px;border-radius:4px;font-size:13px;margin-bottom:8px;font-family:var(--body);
+  }
+  .nlm-input:focus{border-color:var(--gold);}
+  .nlm-form-actions{display:flex;gap:8px;}
+  .nlm-status{font-size:11.5px;color:var(--cream-dim);margin-top:8px;margin-bottom:0;}
+  .nav-links .nav-cta{
+    background:var(--gold);color:var(--ink);padding:8px 16px;border-radius:3px;
+    font-weight:700;text-transform:uppercase;font-size:12px;letter-spacing:0.03em;
+  }
+  .nav-links .nav-cta:hover{background:#ffd633;color:var(--ink);}
+  @media (max-width:640px){
+    .nav-links{gap:12px;font-size:12px;}
+    .nav-links .nav-cta{padding:7px 12px;}
+  }
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:24px;margin-bottom:20px;}
+  .panel h2{font-size:18px;margin-bottom:14px;}
+
+  .join-code-box{
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    background:var(--ink-soft);border:1px dashed var(--gold);border-radius:6px;padding:16px 20px;
+  }
+  .join-code-value{font-family:var(--mono);font-size:28px;letter-spacing:0.14em;color:var(--gold);font-weight:700;}
+  .join-code-hint{font-size:13px;color:var(--cream-dim);margin-top:6px;}
+
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    font-weight:700;font-size:13px;letter-spacing:0.02em;text-transform:uppercase;
+    padding:10px 18px;border-radius:3px;cursor:pointer;border:1px solid var(--line);
+    background:transparent;color:var(--cream);font-family:var(--body);
+    transition:transform .12s ease, border-color .15s ease;
+  }
+  .btn:hover{transform:translateY(-1px);border-color:var(--gold);color:var(--gold);}
+  .btn-primary{background:var(--gold);color:var(--ink);border-color:var(--gold);}
+  .btn-primary:hover{background:#ffd633;color:var(--ink);}
+  .btn:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
+
+  .member-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+  .member-list li{
+    display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);
+  }
+  .member-list li:first-child{border-top:none;padding-top:0;}
+  .member-list img{width:36px;height:36px;border-radius:50%;object-fit:cover;background:var(--slate);}
+  .member-name{font-weight:600;font-size:14.5px;}
+  .commish-tag{
+    font-family:var(--mono);font-size:10px;color:var(--gold);text-transform:uppercase;
+    letter-spacing:0.06em;margin-left:8px;
+  }
+
+  .state-msg{text-align:center;padding:40px 20px;color:var(--cream-dim);font-size:14px;}
+  .state-msg.error{color:#FF8A8A;}
+
+  .draft-cta{text-align:center;padding:10px 0;}
+  .draft-cta p{color:var(--cream-dim);font-size:13.5px;max-width:420px;margin:0 auto 16px;}
+
+  .profile-field{margin-bottom:16px;}
+  .profile-field label{
+    display:block;font-family:var(--mono);font-size:11px;text-transform:uppercase;
+    letter-spacing:0.08em;color:var(--cream-dim);margin-bottom:6px;
+  }
+  .profile-field input{
+    width:100%;background:var(--ink-soft);border:1px solid var(--line);color:var(--cream);
+    padding:10px 12px;border-radius:3px;font-family:var(--body);font-size:14px;
+  }
+  .profile-field input:focus{border-color:var(--gold);}
+  .logo-row{display:flex;align-items:center;gap:16px;margin-bottom:20px;}
+  .logo-preview, .logo-placeholder{
+    width:64px;height:64px;border-radius:50%;object-fit:cover;background:var(--slate);flex-shrink:0;border:2px solid var(--line);
+  }
+  .profile-status{font-size:13px;margin-top:10px;display:none;}
+
+  .member-list .team-name{font-weight:700;font-size:15px;}
+  .member-list .coach-line{font-size:12px;color:var(--cream-dim);margin-top:1px;}
+</style>
+</head>
+<body>
+
+<header class="site-nav">
+  <div class="nav-inner">
+    <a href="index.html" class="brand">
+      <svg class="brand-mark" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="45" fill="#fff" stroke="#111" stroke-width="6"/>
+        <path d="M6,50 A44,44 0 0,1 94,50 Z" fill="#EE1515" stroke="#111" stroke-width="6"/>
+        <line x1="6" y1="50" x2="94" y2="50" stroke="#111" stroke-width="7"/>
+        <circle cx="50" cy="50" r="15" fill="#fff" stroke="#111" stroke-width="7"/>
+        <circle cx="50" cy="50" r="6" fill="#111"/>
+      </svg>
+      Pokemon VGC Draft League
+    </a>
+    <nav class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="pool.html">Pool</a>
+      <a href="format.html">Format</a>
+      <span id="navSignedOut"><a href="signin.html" class="nav-cta">Sign In</a></span>
+      <span id="navSignedIn" class="nav-account" style="display:none;">
+        <div class="nav-leagues-wrap">
+          <button id="navLeaguesBtn" class="btn btn-sm" type="button">Leagues &#9662;</button>
+          <div id="navLeaguesMenu" class="nav-leagues-menu">
+            <div id="navLeaguesDefaultView">
+              <div class="nlm-label">My Leagues</div>
+              <ul id="navLeaguesList" class="nlm-list"></ul>
+              <div class="nlm-empty" id="navLeaguesEmpty" style="display:none;">You're not in any leagues yet.</div>
+              <div class="nlm-divider"></div>
+              <button type="button" class="nlm-action" id="navShowCreateBtn">+ Create a League</button>
+              <button type="button" class="nlm-action" id="navShowJoinBtn">+ Join a League</button>
+            </div>
+            <div id="navCreateView" style="display:none;">
+              <div class="nlm-label">Create a League</div>
+              <input type="text" id="navCreateNameInput" class="nlm-input" placeholder="League name">
+              <div class="nlm-form-actions">
+                <button type="button" class="btn btn-primary btn-sm" id="navCreateSubmitBtn">Create</button>
+                <button type="button" class="btn btn-sm" id="navCreateCancelBtn">Cancel</button>
+              </div>
+              <p class="nlm-status" id="navCreateStatus"></p>
+            </div>
+            <div id="navJoinView" style="display:none;">
+              <div class="nlm-label">Join a League</div>
+              <input type="text" id="navJoinCodeInput" class="nlm-input" placeholder="e.g. 7QJKXT" maxlength="6" style="text-transform:uppercase;">
+              <div class="nlm-form-actions">
+                <button type="button" class="btn btn-primary btn-sm" id="navJoinSubmitBtn">Join</button>
+                <button type="button" class="btn btn-sm" id="navJoinCancelBtn">Cancel</button>
+              </div>
+              <p class="nlm-status" id="navJoinStatus"></p>
+            </div>
+          </div>
+        </div>
+        <span id="navUserEmail"></span>
+        <button id="navSignOutBtn" class="btn btn-sm">Sign Out</button>
+      </span>
+    </nav>
+  </div>
+</header>
+
+<div class="league-subnav">
+  <div class="league-subnav-inner">
+    <a href="match.html" id="subnavMatch" class="subnav-tab">Match</a>
+    <a href="team.html" id="subnavTeam" class="subnav-tab">Team</a>
+    <a href="freeagency.html" id="subnavFA" class="subnav-tab">Free Agency</a>
+    <a href="trades.html" id="subnavTrades" class="subnav-tab active">Trades</a>
+    <a href="standing.html" id="subnavStanding" class="subnav-tab">Standing</a>
+    <a href="announcements.html" id="subnavAnnouncements" class="subnav-tab">Announcements</a>
+    <a href="draft.html" id="subnavDraft" class="subnav-tab">Draft Room</a>
+    <a href="commissioner.html" id="subnavCommish" class="subnav-tab" style="display:none;">Commissioner</a>
+  </div>
+</div>
+
+<main>
+  <div id="content">
+    <div class="state-msg" id="stateMsg">Loading league…</div>
+  </div>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, onSnapshot, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyArHYUDlo49rdA889l9woNhOuUSKe72CeE",
+    authDomain: "pokemon-vr-draft-league.firebaseapp.com",
+    projectId: "pokemon-vr-draft-league",
+    storageBucket: "pokemon-vr-draft-league.firebasestorage.app",
+    messagingSenderId: "400355118785",
+    appId: "1:400355118785:web:bee98aa998c87ea5098e40"
+  };
+
+  const app = initializeApp(FIREBASE_CONFIG);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  const PLACEHOLDER_SPRITE = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="none" stroke="#3A3A3A" stroke-width="2"/><line x1="3" y1="20" x2="37" y2="20" stroke="#3A3A3A" stroke-width="2"/><circle cx="20" cy="20" r="5" fill="#3A3A3A"/></svg>'
+  );
+  function kebab(s){ return String(s||'').toLowerCase().replace(/['".]/g,'').trim().replace(/\s+/g,'-'); }
+  const REGIONAL_SLUG_MAP = { alola:'alolan', galar:'galarian', hisui:'hisuian' };
+  function spriteCandidates(mon){
+    const base = kebab(mon.name);
+    const slugs = [];
+    if(mon.variation){
+      const vLower = mon.variation.toLowerCase();
+      const mapped = REGIONAL_SLUG_MAP[vLower];
+      const vSlug = kebab(mon.variation);
+      if(mapped) slugs.push(base+'-'+mapped);
+      slugs.push(base+'-'+vSlug);
+    } else { slugs.push(base); }
+    const urls = [];
+    slugs.forEach(s => urls.push('https://img.pokemondb.net/sprites/scarlet-violet/icon/'+s+'.png'));
+    slugs.forEach(s => urls.push('https://img.pokemondb.net/sprites/home/normal/2x/'+s+'.jpg'));
+    if(mon.variation) urls.push('https://img.pokemondb.net/sprites/scarlet-violet/icon/'+base+'.png');
+    return urls;
+  }
+  function makeSpriteImg(mon, cssClass){
+    const candidates = spriteCandidates(mon);
+    const img = document.createElement('img');
+    img.className = cssClass; img.alt=''; img.loading='lazy'; img.src = candidates[0];
+    let idx=0;
+    img.addEventListener('error', () => {
+      idx++;
+      if(idx < candidates.length){ img.src = candidates[idx]; }
+      else { img.onerror=null; img.src = PLACEHOLDER_SPRITE; img.style.opacity='0.4'; }
+    });
+    return img;
+  }
+
+  const DEFAULT_SETTINGS = { tradesPerSeason: 5, maxPokemonPerSide: 3, vetoEnabled: true, vetoThreshold: 4 };
+
+  const content = document.getElementById('content');
+  const params = new URLSearchParams(window.location.search);
+  const leagueId = params.get('id');
+
+  ['subnavMatch','subnavTeam','subnavFA','subnavTrades','subnavStanding','subnavAnnouncements','subnavDraft','subnavCommish'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el && leagueId) el.href = el.getAttribute('href') + '?id=' + leagueId;
+  });
+
+  let currentUser = null;
+  let currentLeague = null;
+  let selectedOfferedIds = [];
+  let selectedRequestedIds = [];
+  let selectedProposerDropIds = [];
+  let selectedPartnerIdx = null;
+  let recipientDropSelections = {};
+
+  function tierSum(mons){ return (mons||[]).reduce((s,m) => s + m.tier, 0); }
+  function tradeId(){ return 't' + Date.now() + Math.random().toString(36).slice(2,6); }
+
+  function pushAnnouncement(type, message){
+    const updated = (currentLeague.announcements || []).slice();
+    updated.push({ type, message, timestamp: Date.now() });
+    return updateDoc(doc(db, 'leagues', leagueId), { announcements: updated }).catch(() => {});
+  }
+
+  function renderProposeForm(league, myIdx){
+    const wrap = document.getElementById('proposeWrap');
+    if(!wrap) return;
+    const trainers = league.draft.trainers;
+    const settings = Object.assign({}, DEFAULT_SETTINGS, league.settings || {});
+    const me = trainers[myIdx];
+    const tradesUsed = me.tradesUsed || 0;
+
+    if(tradesUsed >= settings.tradesPerSeason){
+      wrap.innerHTML = '<div class="state-msg">You\'ve used all ' + settings.tradesPerSeason + ' of your trades for this season.</div>';
+      return;
+    }
+
+    const partnerOptions = trainers.map((t, i) => i === myIdx ? '' : '<option value="' + i + '">' + escapeHtml(t.name) + '</option>').join('');
+    wrap.innerHTML =
+      '<div class="field-inline" style="margin-bottom:16px;"><label>Trade with</label><select id="partnerSelect"><option value="">Choose a team…</option>' + partnerOptions + '</select></div>' +
+      '<div class="trade-columns" id="tradeColumns" style="display:none;">' +
+        '<div><div class="trade-col-label">Your Pokémon <span id="offeredCount"></span></div><ul class="trade-pick-list" id="offeredList"></ul></div>' +
+        '<div><div class="trade-col-label" id="theirColLabel">Their Pokémon <span id="requestedCount"></span></div><ul class="trade-pick-list" id="requestedList"></ul></div>' +
+      '</div>' +
+      '<div id="dropSection" style="display:none;margin-top:16px;">' +
+        '<div class="trade-col-label">Also drop, to make room (optional) <span id="dropCount"></span></div>' +
+        '<ul class="trade-pick-list" id="dropList"></ul>' +
+        '<p class="settings-note">Dropped Pokémon go back to Free Agency — your partner doesn\'t get them. Use this if the trade would push your roster over the limit.</p>' +
+      '</div>' +
+      '<p class="settings-note">Max ' + settings.maxPokemonPerSide + ' Pokémon per side. You have ' + (settings.tradesPerSeason - tradesUsed) + ' trade(s) left this season.</p>' +
+      '<button class="btn btn-primary" id="sendOfferBtn" style="display:none;">Send Trade Offer</button>' +
+      '<p class="settings-status" id="proposeStatus"></p>';
+
+    document.getElementById('partnerSelect').addEventListener('change', (e) => {
+      selectedPartnerIdx = e.target.value === '' ? null : parseInt(e.target.value, 10);
+      selectedOfferedIds = [];
+      selectedRequestedIds = [];
+      selectedProposerDropIds = [];
+      renderTradeColumns(league, myIdx, settings);
+    });
+  }
+
+  function renderTradeColumns(league, myIdx, settings){
+    const tradeColumns = document.getElementById('tradeColumns');
+    const sendBtn = document.getElementById('sendOfferBtn');
+    if(selectedPartnerIdx === null){
+      tradeColumns.style.display = 'none';
+      sendBtn.style.display = 'none';
+      return;
+    }
+    tradeColumns.style.display = 'grid';
+    sendBtn.style.display = 'inline-flex';
+    const trainers = league.draft.trainers;
+    const me = trainers[myIdx];
+    const them = trainers[selectedPartnerIdx];
+    document.getElementById('theirColLabel').innerHTML = escapeHtml(them.name) + '\'s Pokémon <span id="requestedCount"></span>';
+
+    function renderList(listEl, roster, selectedIds, maxCount, onChange){
+      listEl.innerHTML = '';
+      roster.forEach(mon => {
+        const li = document.createElement('li');
+        const checked = selectedIds.includes(mon.id);
+        li.className = 'trade-pick-item' + (checked ? ' picked' : '');
+        li.appendChild(makeSpriteImg(mon, 'mon-sprite'));
+        const info = document.createElement('span');
+        info.className = 'mon-info';
+        info.innerHTML = escapeHtml(mon.name) + (mon.variation ? ' <span class="mon-var">' + escapeHtml(mon.variation) + '</span>' : '');
+        li.appendChild(info);
+        const tier = document.createElement('span');
+        tier.className = 'tier-chip';
+        tier.textContent = mon.tier;
+        li.appendChild(tier);
+        li.addEventListener('click', () => {
+          const idx = selectedIds.indexOf(mon.id);
+          if(idx > -1){
+            selectedIds.splice(idx, 1);
+          } else {
+            if(selectedIds.length >= maxCount) return;
+            selectedIds.push(mon.id);
+          }
+          onChange();
+        });
+        listEl.appendChild(li);
+      });
+    }
+
+    renderList(document.getElementById('offeredList'), me.roster, selectedOfferedIds, settings.maxPokemonPerSide, () => renderTradeColumns(league, myIdx, settings));
+    renderList(document.getElementById('requestedList'), them.roster, selectedRequestedIds, settings.maxPokemonPerSide, () => renderTradeColumns(league, myIdx, settings));
+    document.getElementById('offeredCount').textContent = '(' + selectedOfferedIds.length + '/' + settings.maxPokemonPerSide + ')';
+    document.getElementById('requestedCount').textContent = '(' + selectedRequestedIds.length + '/' + settings.maxPokemonPerSide + ')';
+
+    // Optional extra drops from my own roster, excluding whatever's already offered
+    const dropSection = document.getElementById('dropSection');
+    const dropList = document.getElementById('dropList');
+    const droppableRoster = me.roster.filter(m => !selectedOfferedIds.includes(m.id));
+    dropSection.style.display = 'block';
+    renderList(dropList, droppableRoster, selectedProposerDropIds, droppableRoster.length, () => renderTradeColumns(league, myIdx, settings));
+    document.getElementById('dropCount').textContent = '(' + selectedProposerDropIds.length + ' selected)';
+
+    const sendBtnEl = document.getElementById('sendOfferBtn');
+    sendBtnEl.onclick = () => sendOffer(league, myIdx, selectedPartnerIdx);
+  }
+
+  async function sendOffer(league, myIdx, theirIdx){
+    const status = document.getElementById('proposeStatus');
+    if(selectedOfferedIds.length === 0 || selectedRequestedIds.length === 0){
+      status.textContent = 'Select at least one Pokémon from each side.';
+      status.style.color = '#FF8A8A';
+      return;
+    }
+    const trainers = league.draft.trainers;
+    const me = trainers[myIdx];
+    const them = trainers[theirIdx];
+    const offered = me.roster.filter(m => selectedOfferedIds.includes(m.id));
+    const requested = them.roster.filter(m => selectedRequestedIds.includes(m.id));
+    const proposerDrops = me.roster.filter(m => selectedProposerDropIds.includes(m.id));
+
+    const myNewBudget = me.budget + tierSum(offered) + tierSum(proposerDrops) - tierSum(requested);
+    const theirNewBudget = them.budget + tierSum(requested) - tierSum(offered);
+    const myNewRosterSize = me.roster.length - offered.length - proposerDrops.length + requested.length;
+    const theirNewRosterSize = them.roster.length - requested.length + offered.length;
+
+    if(myNewBudget < 0 || theirNewBudget < 0){
+      status.textContent = 'This trade would put someone\'s budget below zero.';
+      status.style.color = '#FF8A8A';
+      return;
+    }
+    if(myNewRosterSize > league.draft.numSlots || theirNewRosterSize > league.draft.numSlots){
+      status.textContent = 'This trade would push someone over the roster size limit — try dropping an extra Pokémon to make room.';
+      status.style.color = '#FF8A8A';
+      return;
+    }
+
+    const trade = {
+      id: tradeId(),
+      proposerUid: me.uid, proposerName: me.name,
+      recipientUid: them.uid, recipientName: them.name,
+      offered, requested, proposerDrops, recipientDrops: [],
+      status: 'pending',
+      vetoVotes: [],
+      createdAt: Date.now()
+    };
+
+    const updatedTrades = (league.trades || []).concat([trade]);
+    try{
+      await updateDoc(doc(db, 'leagues', leagueId), { trades: updatedTrades });
+      status.textContent = 'Trade offer sent!';
+      status.style.color = 'var(--gold)';
+      selectedOfferedIds = []; selectedRequestedIds = []; selectedProposerDropIds = []; selectedPartnerIdx = null;
+      pushAnnouncement('trade', me.name + ' proposed a trade to ' + them.name);
+    }catch(err){
+      status.textContent = 'Could not send offer: ' + err.message;
+      status.style.color = '#FF8A8A';
+    }
+  }
+
+  function tradeCardHtml(trade){
+    const offeredHtml = trade.offered.map(m => escapeHtml(m.name) + (m.variation ? ' (' + escapeHtml(m.variation) + ')' : '') + ' [' + m.tier + ']').join(', ');
+    const requestedHtml = trade.requested.map(m => escapeHtml(m.name) + (m.variation ? ' (' + escapeHtml(m.variation) + ')' : '') + ' [' + m.tier + ']').join(', ');
+    const proposerDropsHtml = (trade.proposerDrops || []).length
+      ? '<br><span class="drop-note">' + escapeHtml(trade.proposerName) + ' also drops: ' + trade.proposerDrops.map(m => escapeHtml(m.name)).join(', ') + '</span>' : '';
+    const recipientDropsHtml = (trade.recipientDrops || []).length
+      ? '<br><span class="drop-note">' + escapeHtml(trade.recipientName) + ' also drops: ' + trade.recipientDrops.map(m => escapeHtml(m.name)).join(', ') + '</span>' : '';
+    return '<div class="trade-summary"><b>' + escapeHtml(trade.proposerName) + '</b> gives ' + offeredHtml + proposerDropsHtml + '<br><b>' + escapeHtml(trade.recipientName) + '</b> gives ' + requestedHtml + recipientDropsHtml + '</div>';
+  }
+
+  async function finalizeTrade(league, trade){
+    const trainers = JSON.parse(JSON.stringify(league.draft.trainers));
+    const proposerIdx = trainers.findIndex(t => t.uid === trade.proposerUid);
+    const recipientIdx = trainers.findIndex(t => t.uid === trade.recipientUid);
+    if(proposerIdx === -1 || recipientIdx === -1) return;
+    const proposer = trainers[proposerIdx];
+    const recipient = trainers[recipientIdx];
+
+    const offeredIds = trade.offered.map(m => m.id);
+    const requestedIds = trade.requested.map(m => m.id);
+
+    // Re-validate against current state in case rosters changed since the trade was proposed
+    const proposerHasAll = offeredIds.every(id => proposer.roster.some(m => m.id === id));
+    const recipientHasAll = requestedIds.every(id => recipient.roster.some(m => m.id === id));
+    if(!proposerHasAll || !recipientHasAll){
+      alert('This trade can no longer be completed — one of the Pokémon involved has already been moved.');
+      return cancelTrade(league, trade, 'declined');
+    }
+
+    proposer.roster = proposer.roster.filter(m => !offeredIds.includes(m.id)).concat(trade.requested);
+    recipient.roster = recipient.roster.filter(m => !requestedIds.includes(m.id)).concat(trade.offered);
+    proposer.budget += tierSum(trade.offered) - tierSum(trade.requested);
+    recipient.budget += tierSum(trade.requested) - tierSum(trade.offered);
+    proposer.tradesUsed = (proposer.tradesUsed || 0) + 1;
+    recipient.tradesUsed = (recipient.tradesUsed || 0) + 1;
+
+    const updatedDraft = JSON.parse(JSON.stringify(league.draft));
+
+    // Process any extra drops (released back to free agency, not given to the other trainer)
+    const proposerDrops = trade.proposerDrops || [];
+    const recipientDrops = trade.recipientDrops || [];
+    const proposerDropIds = proposerDrops.map(m => m.id);
+    const recipientDropIds = recipientDrops.map(m => m.id);
+    proposer.roster = proposer.roster.filter(m => !proposerDropIds.includes(m.id));
+    recipient.roster = recipient.roster.filter(m => !recipientDropIds.includes(m.id));
+    proposer.budget += tierSum(proposerDrops);
+    recipient.budget += tierSum(recipientDrops);
+    proposerDropIds.forEach(id => { delete updatedDraft.draftedIds[id]; });
+    recipientDropIds.forEach(id => { delete updatedDraft.draftedIds[id]; });
+
+    updatedDraft.trainers = trainers;
+    trade.offered.forEach(m => { updatedDraft.draftedIds[m.id] = { trainerIdx: recipientIdx, tier: m.tier }; });
+    trade.requested.forEach(m => { updatedDraft.draftedIds[m.id] = { trainerIdx: proposerIdx, tier: m.tier }; });
+
+    const updatedTrades = (league.trades || []).map(t => t.id === trade.id ? Object.assign({}, t, { status: 'finalized' }) : t);
+
+    try{
+      await updateDoc(doc(db, 'leagues', leagueId), { draft: updatedDraft, trades: updatedTrades });
+      pushAnnouncement('trade', escapeHtml(trade.proposerName) + ' and ' + escapeHtml(trade.recipientName) + ' completed a trade');
+    }catch(err){
+      alert('Could not finalize trade: ' + err.message);
+    }
+  }
+
+  async function cancelTrade(league, trade, newStatus){
+    const updatedTrades = (league.trades || []).map(t => t.id === trade.id ? Object.assign({}, t, { status: newStatus }) : t);
+    try{
+      await updateDoc(doc(db, 'leagues', leagueId), { trades: updatedTrades });
+    }catch(err){
+      alert('Could not update trade: ' + err.message);
+    }
+  }
+
+  async function acceptTrade(league, trade){
+    const settings = Object.assign({}, DEFAULT_SETTINGS, league.settings || {});
+    if(settings.vetoEnabled){
+      const updatedTrades = (league.trades || []).map(t => t.id === trade.id ? Object.assign({}, t, trade, { status: 'accepted_pending_veto' }) : t);
+      try{
+        await updateDoc(doc(db, 'leagues', leagueId), { trades: updatedTrades });
+        pushAnnouncement('trade', escapeHtml(trade.recipientName) + ' accepted a trade offer from ' + escapeHtml(trade.proposerName) + ' — open for veto votes');
+      }catch(err){ alert('Could not accept trade: ' + err.message); }
+    } else {
+      await finalizeTrade(league, trade);
+    }
+  }
+
+  async function voteVeto(league, trade){
+    const votes = (trade.vetoVotes || []).slice();
+    if(votes.includes(currentUser.uid)) return;
+    votes.push(currentUser.uid);
+    const updatedTrades = (league.trades || []).map(t => t.id === trade.id ? Object.assign({}, t, { vetoVotes: votes }) : t);
+    try{
+      await updateDoc(doc(db, 'leagues', leagueId), { trades: updatedTrades });
+    }catch(err){ alert('Could not record veto vote: ' + err.message); }
+  }
+
+  function renderPendingTrades(league, myIdx){
+    const wrap = document.getElementById('pendingWrap');
+    if(!wrap) return;
+    const me = league.draft.trainers[myIdx];
+    const pending = (league.trades || []).filter(t => t.status === 'pending' && (t.proposerUid === me.uid || t.recipientUid === me.uid));
+    if(pending.length === 0){
+      wrap.innerHTML = '<div class="state-msg">No pending trades right now.</div>';
+      return;
+    }
+    wrap.innerHTML = '';
+    pending.forEach(trade => {
+      const card = document.createElement('div');
+      card.className = 'trade-card';
+      card.innerHTML = tradeCardHtml(trade);
+      const actions = document.createElement('div');
+      actions.className = 'trade-actions';
+      if(trade.recipientUid === me.uid){
+        const wouldExceed = (me.roster.length - trade.requested.length + trade.offered.length) > league.draft.numSlots;
+        if(wouldExceed){
+          recipientDropSelections[trade.id] = recipientDropSelections[trade.id] || [];
+          const dropWrap = document.createElement('div');
+          dropWrap.className = 'accept-drop-wrap';
+          dropWrap.innerHTML = '<div class="trade-col-label">Accepting this puts you over your roster limit — pick Pokémon to drop first</div><ul class="trade-pick-list" id="acceptDropList-' + trade.id + '"></ul>';
+          card.appendChild(dropWrap);
+
+          const requestedIds = trade.requested.map(m => m.id);
+          const droppable = me.roster.filter(m => !requestedIds.includes(m.id));
+          const overBy = (me.roster.length - trade.requested.length + trade.offered.length) - league.draft.numSlots;
+
+          function renderAcceptDropList(){
+            const listEl = document.getElementById('acceptDropList-' + trade.id);
+            listEl.innerHTML = '';
+            droppable.forEach(mon => {
+              const li = document.createElement('li');
+              const sel = recipientDropSelections[trade.id];
+              const checked = sel.includes(mon.id);
+              li.className = 'trade-pick-item' + (checked ? ' picked' : '');
+              li.appendChild(makeSpriteImg(mon, 'mon-sprite'));
+              const info = document.createElement('span');
+              info.className = 'mon-info';
+              info.innerHTML = escapeHtml(mon.name);
+              li.appendChild(info);
+              const tier = document.createElement('span');
+              tier.className = 'tier-chip';
+              tier.textContent = mon.tier;
+              li.appendChild(tier);
+              li.addEventListener('click', () => {
+                const idx = sel.indexOf(mon.id);
+                if(idx > -1) sel.splice(idx, 1);
+                else sel.push(mon.id);
+                renderAcceptDropList();
+                acceptBtn.disabled = sel.length < overBy;
+              });
+              listEl.appendChild(li);
+            });
+          }
+          renderAcceptDropList();
+
+          var acceptBtn = document.createElement('button');
+          acceptBtn.className = 'btn btn-primary btn-sm';
+          acceptBtn.textContent = 'Accept with these drops';
+          acceptBtn.disabled = true;
+          acceptBtn.addEventListener('click', () => {
+            const recipientDrops = me.roster.filter(m => recipientDropSelections[trade.id].includes(m.id));
+            acceptTrade(league, Object.assign({}, trade, { recipientDrops }));
+          });
+        } else {
+          var acceptBtn = document.createElement('button');
+          acceptBtn.className = 'btn btn-primary btn-sm';
+          acceptBtn.textContent = 'Accept';
+          acceptBtn.addEventListener('click', () => acceptTrade(league, trade));
+        }
+        const declineBtn = document.createElement('button');
+        declineBtn.className = 'btn btn-sm btn-danger';
+        declineBtn.textContent = 'Decline';
+        declineBtn.addEventListener('click', () => cancelTrade(league, trade, 'declined'));
+        actions.appendChild(acceptBtn);
+        actions.appendChild(declineBtn);
+      } else {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-sm btn-danger';
+        cancelBtn.textContent = 'Cancel Offer';
+        cancelBtn.addEventListener('click', () => cancelTrade(league, trade, 'canceled'));
+        actions.appendChild(cancelBtn);
+      }
+      card.appendChild(actions);
+      wrap.appendChild(card);
+    });
+  }
+
+  function renderVetoTrades(league, myIdx, isCommish){
+    const section = document.getElementById('vetoSection');
+    const wrap = document.getElementById('vetoWrap');
+    if(!wrap) return;
+    const settings = Object.assign({}, DEFAULT_SETTINGS, league.settings || {});
+    const me = league.draft.trainers[myIdx];
+    const vetoTrades = (league.trades || []).filter(t => t.status === 'accepted_pending_veto');
+    if(vetoTrades.length === 0){
+      section.style.display = 'none';
+      return;
+    }
+    section.style.display = 'block';
+    wrap.innerHTML = '';
+    vetoTrades.forEach(trade => {
+      const card = document.createElement('div');
+      card.className = 'trade-card';
+      card.innerHTML = tradeCardHtml(trade) + '<div class="veto-count">' + (trade.vetoVotes||[]).length + ' / ' + settings.vetoThreshold + ' votes to veto</div>';
+      const actions = document.createElement('div');
+      actions.className = 'trade-actions';
+      const isParty = me && (trade.proposerUid === me.uid || trade.recipientUid === me.uid);
+      const alreadyVoted = me && (trade.vetoVotes||[]).includes(me.uid);
+      if(me && !isParty && !alreadyVoted){
+        const vetoBtn = document.createElement('button');
+        vetoBtn.className = 'btn btn-sm btn-danger';
+        vetoBtn.textContent = 'Vote to Veto';
+        vetoBtn.addEventListener('click', () => voteVeto(league, trade));
+        actions.appendChild(vetoBtn);
+      }
+      if(isCommish){
+        const vetoMet = (trade.vetoVotes||[]).length >= settings.vetoThreshold;
+        const finalizeBtn = document.createElement('button');
+        finalizeBtn.className = 'btn btn-primary btn-sm';
+        finalizeBtn.textContent = 'Finalize Trade';
+        finalizeBtn.addEventListener('click', () => finalizeTrade(league, trade));
+        const vetoExecBtn = document.createElement('button');
+        vetoExecBtn.className = 'btn btn-sm btn-danger';
+        vetoExecBtn.textContent = 'Veto This Trade';
+        vetoExecBtn.disabled = !vetoMet;
+        vetoExecBtn.addEventListener('click', () => cancelTrade(league, trade, 'vetoed'));
+        actions.appendChild(finalizeBtn);
+        actions.appendChild(vetoExecBtn);
+      }
+      card.appendChild(actions);
+      wrap.appendChild(card);
+    });
+  }
+
+  function render(league){
+    currentLeague = league;
+    const isCommish = currentUser && league.commissionerUid === currentUser.uid;
+    const subnavCommish = document.getElementById('subnavCommish');
+    if(subnavCommish) subnavCommish.style.display = isCommish ? '' : 'none';
+
+    if(!league.draft){
+      content.innerHTML =
+        '<div class="page-head"><span class="eyebrow">Trades</span><h1>' + escapeHtml(league.name || 'League') + '</h1></div>' +
+        '<div class="panel state-msg">Trading opens up once your league\'s draft is complete.</div>';
+      return;
+    }
+
+    const myIdx = currentUser ? league.draft.trainers.findIndex(t => t.uid === currentUser.uid) : -1;
+
+    content.innerHTML =
+      '<div class="page-head">' +
+        '<span class="eyebrow">Trades</span>' +
+        '<h1>' + escapeHtml(league.name || 'League') + '</h1>' +
+      '</div>' +
+      (myIdx === -1 ? '<div class="panel state-msg">You joined after the draft, so you don\'t have a team to trade with.</div>' : '<div class="panel"><h2>Propose a Trade</h2><div id="proposeWrap"></div></div>') +
+      '<div class="panel"><h2>Pending Trades</h2><div id="pendingWrap"></div></div>' +
+      '<div class="panel" id="vetoSection" style="display:none;"><h2>Awaiting Veto</h2><div id="vetoWrap"></div></div>';
+
+    if(myIdx > -1) renderProposeForm(league, myIdx);
+    renderPendingTrades(league, myIdx);
+    renderVetoTrades(league, myIdx, isCommish);
+  }
+
+  function loadLeague(){
+    if(!leagueId){
+      content.innerHTML = '<div class="state-msg error">No league specified — use a link from the sign-in page.</div>';
+      return;
+    }
+    onSnapshot(doc(db, 'leagues', leagueId), (snap) => {
+      if(!snap.exists()){
+        content.innerHTML = '<div class="state-msg error">This league doesn\'t exist or was deleted.</div>';
+        return;
+      }
+      render(snap.data());
+    }, (err) => {
+      content.innerHTML = '<div class="state-msg error">Could not load league: ' + escapeHtml(err.message) + '</div>';
+    });
+  }
+
+  const navSignedOut = document.getElementById('navSignedOut');
+  const navSignedIn = document.getElementById('navSignedIn');
+  const navUserEmail = document.getElementById('navUserEmail');
+  const navSignOutBtn = document.getElementById('navSignOutBtn');
+  navSignOutBtn.addEventListener('click', () => signOut(auth));
+
+  const navLeaguesBtn = document.getElementById('navLeaguesBtn');
+  const navLeaguesMenu = document.getElementById('navLeaguesMenu');
+  const navLeaguesList = document.getElementById('navLeaguesList');
+  const navLeaguesEmpty = document.getElementById('navLeaguesEmpty');
+  navLeaguesBtn.addEventListener('click', (e) => { e.stopPropagation(); navLeaguesMenu.classList.toggle('open'); });
+  document.addEventListener('click', () => navLeaguesMenu.classList.remove('open'));
+  navLeaguesMenu.addEventListener('click', (e) => e.stopPropagation());
+
+  function generateJoinCode(){
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for(let i = 0; i < 6; i++){ code += chars[Math.floor(Math.random() * chars.length)]; }
+    return code;
+  }
+
+  const navLeaguesDefaultView = document.getElementById('navLeaguesDefaultView');
+  const navCreateView = document.getElementById('navCreateView');
+  const navJoinView = document.getElementById('navJoinView');
+  const navShowCreateBtn = document.getElementById('navShowCreateBtn');
+  const navShowJoinBtn = document.getElementById('navShowJoinBtn');
+  const navCreateNameInput = document.getElementById('navCreateNameInput');
+  const navCreateSubmitBtn = document.getElementById('navCreateSubmitBtn');
+  const navCreateCancelBtn = document.getElementById('navCreateCancelBtn');
+  const navCreateStatus = document.getElementById('navCreateStatus');
+  const navJoinCodeInput = document.getElementById('navJoinCodeInput');
+  const navJoinSubmitBtn = document.getElementById('navJoinSubmitBtn');
+  const navJoinCancelBtn = document.getElementById('navJoinCancelBtn');
+  const navJoinStatus = document.getElementById('navJoinStatus');
+  let navCurrentUser = null;
+
+  function showNavDefault(){
+    navLeaguesDefaultView.style.display = 'block';
+    navCreateView.style.display = 'none';
+    navJoinView.style.display = 'none';
+    navCreateStatus.textContent = '';
+    navJoinStatus.textContent = '';
+  }
+  navShowCreateBtn.addEventListener('click', () => {
+    navLeaguesDefaultView.style.display = 'none';
+    navCreateView.style.display = 'block';
+  });
+  navShowJoinBtn.addEventListener('click', () => {
+    navLeaguesDefaultView.style.display = 'none';
+    navJoinView.style.display = 'block';
+  });
+  navCreateCancelBtn.addEventListener('click', showNavDefault);
+  navJoinCancelBtn.addEventListener('click', showNavDefault);
+
+  navCreateSubmitBtn.addEventListener('click', async () => {
+    if(!navCurrentUser) return;
+    const name = navCreateNameInput.value.trim();
+    if(!name){ navCreateStatus.textContent = 'Give it a name.'; return; }
+    navCreateSubmitBtn.disabled = true;
+    try{
+      const members = {};
+      members[navCurrentUser.uid] = {
+        displayName: navCurrentUser.displayName || 'Trainer',
+        photoURL: navCurrentUser.photoURL || '',
+        joinedAt: Date.now()
+      };
+      await addDoc(collection(db, 'leagues'), {
+        name, joinCode: generateJoinCode(), leagueType: 'redraft', draftType: 'snake',
+        commissionerUid: navCurrentUser.uid, commissionerName: navCurrentUser.displayName || 'Trainer',
+        members, createdAt: serverTimestamp()
+      });
+      navCreateNameInput.value = '';
+      await loadNavLeagues(navCurrentUser);
+      showNavDefault();
+    }catch(err){
+      navCreateStatus.textContent = 'Error: ' + err.message;
+    }
+    navCreateSubmitBtn.disabled = false;
+  });
+
+  navJoinSubmitBtn.addEventListener('click', async () => {
+    if(!navCurrentUser) return;
+    const code = navJoinCodeInput.value.trim().toUpperCase();
+    if(!code){ navJoinStatus.textContent = 'Enter a code.'; return; }
+    navJoinSubmitBtn.disabled = true;
+    try{
+      const q = query(collection(db, 'leagues'), where('joinCode', '==', code));
+      const snap = await getDocs(q);
+      if(snap.empty){
+        navJoinStatus.textContent = 'No league found with that code.';
+        navJoinSubmitBtn.disabled = false;
+        return;
+      }
+      const leagueDoc = snap.docs[0];
+      const leagueData = leagueDoc.data();
+      const maxTeams = (leagueData.settings && leagueData.settings.maxTeams) || Infinity;
+      const currentMemberCount = Object.keys(leagueData.members || {}).length;
+      if(!leagueData.members || !leagueData.members[navCurrentUser.uid]){
+        if(currentMemberCount >= maxTeams){
+          navJoinStatus.textContent = 'This league is full (' + maxTeams + ' team limit).';
+          navJoinSubmitBtn.disabled = false;
+          return;
+        }
+      }
+      await updateDoc(doc(db, 'leagues', leagueDoc.id), {
+        ['members.' + navCurrentUser.uid]: {
+          displayName: navCurrentUser.displayName || 'Trainer',
+          photoURL: navCurrentUser.photoURL || '',
+          joinedAt: Date.now()
+        }
+      });
+      navJoinCodeInput.value = '';
+      await loadNavLeagues(navCurrentUser);
+      showNavDefault();
+    }catch(err){
+      navJoinStatus.textContent = 'Error: ' + err.message;
+    }
+    navJoinSubmitBtn.disabled = false;
+  });
+
+
+  async function loadNavLeagues(user){
+    try{
+      const q = query(collection(db, 'leagues'), where('members.' + user.uid, '!=', null));
+      const snap = await getDocs(q);
+      navLeaguesList.innerHTML = '';
+      if(snap.empty){ navLeaguesEmpty.style.display = 'block'; return; }
+      navLeaguesEmpty.style.display = 'none';
+      snap.forEach(docSnap => {
+        const l = docSnap.data();
+        const isCommish = l.commissionerUid === user.uid;
+        const li = document.createElement('li');
+        li.innerHTML = '<a href="league.html?id=' + docSnap.id + '"><span>' + escapeHtml(l.name || 'Untitled League') + '</span>' + (isCommish ? '<span class="nlm-commish">Commish</span>' : '') + '</a>';
+        navLeaguesList.appendChild(li);
+      });
+    }catch(err){
+      navLeaguesEmpty.style.display = 'block';
+      navLeaguesEmpty.textContent = 'Could not load leagues.';
+    }
+  }
+
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    if(user){
+      navSignedOut.style.display = 'none';
+      navSignedIn.style.display = 'flex';
+      navUserEmail.textContent = user.email || '';
+      navCurrentUser = user;
+      loadNavLeagues(user);
+    } else {
+      navSignedOut.style.display = '';
+      navSignedIn.style.display = 'none';
+    }
+    if(!user){
+      content.innerHTML = '<div class="state-msg">Please <a href="signin.html" style="color:var(--gold);text-decoration:underline;">sign in</a> first.</div>';
+      return;
+    }
+    loadLeague();
+  });
+</script>
+
+</body>
+</html>
