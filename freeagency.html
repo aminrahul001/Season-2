@@ -55,6 +55,18 @@
 
   .fa-layout{display:grid;grid-template-columns:320px 1fr;gap:20px;align-items:start;}
   @media (max-width:900px){.fa-layout{grid-template-columns:1fr;}}
+  .fa-tabs{display:flex;gap:8px;margin-bottom:16px;}
+  .fa-tab{
+    background:var(--ink-soft);border:1px solid var(--line);color:var(--cream-dim);
+    padding:9px 18px;border-radius:4px;font-family:var(--body);font-weight:600;font-size:13px;cursor:pointer;
+    display:flex;align-items:center;gap:8px;
+  }
+  .fa-tab.active{background:var(--gold);color:var(--ink);border-color:var(--gold);}
+  .fa-tab-badge{
+    background:#EE1515;color:#fff;font-family:var(--mono);font-size:10px;font-weight:700;
+    min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;
+  }
+  .fa-tab.active .fa-tab-badge{background:var(--ink);color:var(--gold);}
 
   .fa-team-stats{display:flex;flex-direction:column;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--line);}
   .fa-stat-label{display:block;font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:0.06em;color:var(--cream-dim);}
@@ -1075,16 +1087,19 @@
   let waiverDropSelections = {};
 
   function renderWaivers(league, myIdx){
-    const section = document.getElementById('waiversSection');
     const wrap = document.getElementById('waiversWrap');
-    if(!section || !wrap) return;
+    if(!wrap) return;
     const faSettings = Object.assign({}, DEFAULT_SETTINGS, league.settings || {});
     const active = (league.waivers || []).filter(w => Date.now() < w.expiresAt);
+    const badge = document.getElementById('waiversBadge');
+    if(badge){
+      if(active.length > 0){ badge.textContent = active.length; badge.style.display = ''; }
+      else { badge.style.display = 'none'; }
+    }
     if(active.length === 0){
-      section.style.display = 'none';
+      wrap.innerHTML = '<p class="settings-note">Nothing on waivers right now.</p>';
       return;
     }
-    section.style.display = 'block';
     wrap.innerHTML = '';
     const me = myIdx > -1 ? league.draft.trainers[myIdx] : null;
     active.forEach(w => {
@@ -1221,20 +1236,41 @@
         '<p style="color:var(--cream-dim);font-size:13.5px;margin-top:10px;">Pickups cost points equal to a Pokémon\'s tier, drawn from whatever budget you have left after the draft. Dropping a Pokémon sends it to waivers before it\'s free for anyone to grab. Claims lock in but don\'t hit your roster until the following Monday, so opponents have a fair week to prep.</p>' +
       '</div>' +
       '<div class="panel" id="pendingMovesSection" style="display:none;"><h2>Your Pending Moves</h2><div id="pendingMovesWrap"></div></div>' +
-      '<div class="panel" id="waiversSection" style="display:none;"><h2>On Waivers</h2><div id="waiversWrap"></div></div>' +
-      '<div class="fa-layout">' +
-        '<div class="panel" id="myTeamWrap"></div>' +
-        '<div class="panel">' +
-          '<div class="pool-controls">' +
-            '<div class="field-inline"><label>Search</label><input type="text" id="faSearchBox" placeholder="Pokémon name…"></div>' +
-            '<div class="field-inline"><label>Ability</label><input type="text" id="faAbilitySearchBox" placeholder="e.g. intimidate…"></div>' +
-            '<div class="field-inline"><label>Tier</label><select id="faTierFilter"><option value="all">All tiers</option></select></div>' +
-            '<div class="field-inline"><label>Type</label><select id="faTypeFilter"><option value="all">All types</option></select></div>' +
-            '<span class="pool-count" id="faPoolCount"></span>' +
+      '<div class="fa-tabs">' +
+        '<button class="fa-tab active" id="tabFreeAgents" type="button">Free Agents</button>' +
+        '<button class="fa-tab" id="tabWaivers" type="button">On Waivers<span class="fa-tab-badge" id="waiversBadge" style="display:none;"></span></button>' +
+      '</div>' +
+      '<div id="freeAgentsView">' +
+        '<div class="fa-layout">' +
+          '<div class="panel" id="myTeamWrap"></div>' +
+          '<div class="panel">' +
+            '<div class="pool-controls">' +
+              '<div class="field-inline"><label>Search</label><input type="text" id="faSearchBox" placeholder="Pokémon name…"></div>' +
+              '<div class="field-inline"><label>Ability</label><input type="text" id="faAbilitySearchBox" placeholder="e.g. intimidate…"></div>' +
+              '<div class="field-inline"><label>Tier</label><select id="faTierFilter"><option value="all">All tiers</option></select></div>' +
+              '<div class="field-inline"><label>Type</label><select id="faTypeFilter"><option value="all">All types</option></select></div>' +
+              '<span class="pool-count" id="faPoolCount"></span>' +
+            '</div>' +
+            '<div class="pool-scroll"><table><thead><tr><th></th><th>Pokémon</th><th>Type</th><th>Abilities</th><th>Tier</th><th></th></tr></thead><tbody id="faPoolBody"></tbody></table></div>' +
           '</div>' +
-          '<div class="pool-scroll"><table><thead><tr><th></th><th>Pokémon</th><th>Type</th><th>Abilities</th><th>Tier</th><th></th></tr></thead><tbody id="faPoolBody"></tbody></table></div>' +
         '</div>' +
+      '</div>' +
+      '<div id="waiversView" style="display:none;">' +
+        '<div class="panel"><h2>On Waivers</h2><div id="waiversWrap"></div></div>' +
       '</div>';
+
+    document.getElementById('tabFreeAgents').addEventListener('click', () => {
+      document.getElementById('tabFreeAgents').classList.add('active');
+      document.getElementById('tabWaivers').classList.remove('active');
+      document.getElementById('freeAgentsView').style.display = 'block';
+      document.getElementById('waiversView').style.display = 'none';
+    });
+    document.getElementById('tabWaivers').addEventListener('click', () => {
+      document.getElementById('tabWaivers').classList.add('active');
+      document.getElementById('tabFreeAgents').classList.remove('active');
+      document.getElementById('waiversView').style.display = 'block';
+      document.getElementById('freeAgentsView').style.display = 'none';
+    });
 
     populateFilters();
     renderMyTeam(league, myIdx);
