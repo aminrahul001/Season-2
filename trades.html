@@ -391,6 +391,28 @@
   function tierSum(mons){ return (mons||[]).reduce((s,m) => s + m.tier, 0); }
   function tradeId(){ return 't' + Date.now() + Math.random().toString(36).slice(2,6); }
 
+  const DISCORD_WEBHOOK_FA_TRADES = 'https://discordapp.com/api/webhooks/1545831209819439227/_bllM9VAiCKJcaDnNiltjyJBzKcYjwZnd-EKqVjMuSDPbQHXs_SNC6Kks4pjW7lh5Ixz';
+  async function sendDiscordFATrade(content, embeds){
+    try{
+      await fetch(DISCORD_WEBHOOK_FA_TRADES, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(embeds ? { content, embeds } : { content })
+      });
+    }catch(err){ /* non-critical */ }
+  }
+  function discordSpriteUrl(mon){
+    const pokeapiId = ID_TO_POKEAPI_ID[mon.id];
+    return pokeapiId ? ('https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/' + pokeapiId + '.png') : null;
+  }
+  function discordMonEmbeds(mons){
+    return mons.slice(0, 8).map(mon => {
+      const url = discordSpriteUrl(mon);
+      if(!url) return null;
+      return { title: mon.name + (mon.variation ? ' (' + mon.variation + ')' : ''), thumbnail: { url }, color: 16759813 };
+    }).filter(Boolean);
+  }
+
   function pushAnnouncement(type, message, mons){
     const updated = (currentLeague.announcements || []).slice();
     updated.push({ type, message, mons: mons || [], timestamp: Date.now() });
@@ -651,6 +673,7 @@
         newLogs.push({ id: pendingMoveId(), type: 'fa_swap', timestamp: Date.now(), reversed: false,
           trainerUid: m.trainerUid, trainerName: m.trainerName, claims: [m.mon], drops: m.conditionalDrop ? [m.conditionalDrop] : [] });
         pushAnnouncementPlain(league, 'pickup', m.trainerName + ' officially added ' + m.mon.name + ' to the roster' + (m.conditionalDrop ? ' and dropped ' + m.conditionalDrop.name : ''), m.conditionalDrop ? [m.mon, m.conditionalDrop] : [m.mon], m.conditionalDrop ? [m.conditionalDrop.id] : []);
+        sendDiscordFATrade('📥 **' + m.trainerName + '** officially added **' + m.mon.name + '** to their roster' + (m.conditionalDrop ? ' and dropped **' + m.conditionalDrop.name + '**' : '') + '.', discordMonEmbeds(m.conditionalDrop ? [m.mon, m.conditionalDrop] : [m.mon]));
       } else if(m.type === 'fa_swap'){
         const idx = updatedDraft.trainers.findIndex(t => t.uid === m.trainerUid);
         if(idx === -1) return;
@@ -677,6 +700,7 @@
         const claimNames = claims.map(c => c.name).join(', ') || 'nothing (already claimed elsewhere)';
         const dropNote = drops.length ? (' and dropped ' + drops.map(d => d.name).join(', ')) : '';
         pushAnnouncementPlain(league, 'pickup', m.trainerName + ' officially added ' + claimNames + ' to the roster' + dropNote, claims.concat(drops), dropIds);
+        sendDiscordFATrade('📥 **' + m.trainerName + '** officially added **' + claimNames + '** to their roster' + (dropNote ? ' and dropped **' + drops.map(d=>d.name).join(', ') + '**' : '') + '.', discordMonEmbeds(claims.concat(drops)));
       } else if(m.type === 'trade'){
         const pIdx = updatedDraft.trainers.findIndex(t => t.uid === m.proposerUid);
         const rIdx = updatedDraft.trainers.findIndex(t => t.uid === m.recipientUid);
@@ -703,6 +727,7 @@
           proposerUid: m.proposerUid, proposerName: m.proposerName, recipientUid: m.recipientUid, recipientName: m.recipientName,
           offered: m.offered, requested: m.requested });
         pushAnnouncementPlain(league, 'trade', 'The trade between ' + m.proposerName + ' and ' + m.recipientName + ' is now official', m.offered.concat(m.requested));
+        sendDiscordFATrade('🔄 Trade complete: **' + m.proposerName + '** sent ' + m.offered.map(x=>x.name).join(', ') + ' to **' + m.recipientName + '** for ' + m.requested.map(x=>x.name).join(', ') + '.', discordMonEmbeds(m.offered.concat(m.requested)));
       }
     });
 
